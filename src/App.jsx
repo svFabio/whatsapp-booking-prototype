@@ -413,7 +413,7 @@ const WhatsAppBookingPrototype = () => {
                 <div className="bg-green-600 text-white p-4 flex items-center gap-3">
                   <MessageCircle size={24} />
                   <div>
-                    <h3 className="font-bold">Clínica Dental Sonrisas</h3>
+                    <h3 className="font-bold">Clínica</h3>
                     <p className="text-sm text-green-100">Bot automático en línea</p>
                   </div>
                 </div>

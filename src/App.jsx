@@ -122,7 +122,7 @@ const WhatsAppBookingPrototype = () => {
       setMessages(prev => [...prev, {
         id: prev.length + 1,
         type: 'bot',
-        text: 'Gracias! Hemos recibido tu comprobante de pago.\n\nAhora la recepcionista debe validar el pago desde la tablet.\n\nTe notificaremos cuando tu cita esté confirmada.',
+        text: 'Gracias! Hemos recibido tu comprobante de pago.\n\nAhora se validará el pago.\n\nTe notificaremos.',
         time: '10:34'
       }]);
     }, 1000);

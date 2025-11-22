@@ -12,9 +12,7 @@ const WhatsAppBookingPrototype = () => {
   const [paymentTimeout, setPaymentTimeout] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 22));
   const [selectedDate, setSelectedDate] = useState(new Date(2025, 10, 25));
-  const [bookings, setBookings] = useState([
-    { id: 1, date: '2025-11-25', time: '15:00', client: 'Cliente Demo', status: 'pending', phone: '+591 71234567', paid: false, service: 'Consulta general' }
-  ]);
+  const [bookings, setBookings] = useState([]);
 
   const timeSlots = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
   const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -75,6 +73,17 @@ const WhatsAppBookingPrototype = () => {
       if (index < conversation.length) {
         setMessages(prev => [...prev, { ...conversation[index], id: prev.length + 1 }]);
         if (index === conversation.length - 1) {
+          // Add the pending booking when QR is shown
+          setBookings(prev => [...prev, {
+            id: prev.length + 1,
+            date: '2025-11-25',
+            time: '15:00',
+            client: 'Cliente Nuevo',
+            status: 'pending',
+            phone: '+591 7890-1234',
+            paid: false,
+            service: 'Consulta general'
+          }]);
           setShowPaymentButton(true);
           // Start 10-minute timeout simulation (1 minute for demo)
           const timeout = setTimeout(() => {
@@ -101,6 +110,17 @@ const WhatsAppBookingPrototype = () => {
   };
 
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+
+  const resetDemo = () => {
+    setActiveView('whatsapp');
+    setTabletView('calendar');
+    setPhoneView('calendar');
+    setMessages([{ id: 1, type: 'bot', text: '¡Hola! Bienvenido a nuestra clínica. ¿En qué puedo ayudarte?', time: '10:30' }]);
+    setShowPaymentButton(false);
+    setPaymentTimeout(null);
+    setPaymentCompleted(false);
+    setBookings([]);
+  };
 
   const simulatePayment = () => {
     // Clear the timeout since payment was made
@@ -345,7 +365,18 @@ const WhatsAppBookingPrototype = () => {
                   Validar Pago
                 </button>
                 <button
-                  onClick={() => setBookings(bookings.filter(b => b.id !== booking.id))}
+                  onClick={() => {
+                    setBookings(bookings.filter(b => b.id !== booking.id));
+                    // Simular envío de mensaje de rechazo por WhatsApp
+                    setTimeout(() => {
+                      setMessages(prev => [...prev, {
+                        id: prev.length + 1,
+                        type: 'bot',
+                        text: ' Lo sentimos, su comprobante de pago fue rechazado.\n\nEl horario ha sido liberado. Por favor, verifique su comprobante e intente nuevamente.',
+                        time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                      }]);
+                    }, 1000);
+                  }}
                   className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-bold text-sm transition"
                 >
                   Rechazar
@@ -383,8 +414,18 @@ const WhatsAppBookingPrototype = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Sistema de Reservas Automático WhatsApp</h1>
-          <p className="text-gray-600 mb-4">Prototipo funcional - Sincronización en tiempo real entre dispositivos</p>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Sistema de Reservas Automático WhatsApp</h1>
+              <p className="text-gray-600">Prototipo funcional - Sincronización en tiempo real entre dispositivos</p>
+            </div>
+            <button
+              onClick={resetDemo}
+              className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2"
+            >
+               Reiniciar Demo
+            </button>
+          </div>
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
             <h3 className="font-bold text-blue-800 mb-2">Como usar este prototipo:</h3>
             <ol className="list-decimal list-inside text-sm text-blue-700 space-y-1">

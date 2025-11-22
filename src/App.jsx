@@ -10,8 +10,8 @@ const WhatsAppBookingPrototype = () => {
   ]);
   const [showPaymentButton, setShowPaymentButton] = useState(false);
   const [paymentTimeout, setPaymentTimeout] = useState(null);
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 22));
-  const [selectedDate, setSelectedDate] = useState(new Date(2025, 10, 25));
+  const [currentDate, setCurrentDate] = useState(new Date(2024, 10, 1)); // November 2024
+  const [selectedDate, setSelectedDate] = useState(new Date(2024, 10, 25)); // November 25, 2024
   const [bookings, setBookings] = useState([]);
 
   const timeSlots = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
@@ -191,10 +191,10 @@ const WhatsAppBookingPrototype = () => {
                 disabled={isPast}
                 className={`aspect-square rounded-lg p-1 text-sm transition relative ${
                   isPast ? 'bg-gray-200 text-gray-600 cursor-not-allowed'
-                  : isSelected ? `bg-${color}-500 text-white ring-2 ring-${color}-600`
-                  : isToday(day) ? 'bg-green-100 text-green-800 font-bold'
-                  : hasBookings ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
-                  : 'bg-gray-50 text-gray-900 hover:bg-gray-100'
+                  : isSelected ? `bg-${color}-800 text-white ring-2 ring-${color}-900 font-bold shadow-lg`
+                  : isToday(day) ? 'bg-green-200 text-green-900 font-bold'
+                  : hasBookings ? 'bg-orange-200 text-orange-900 hover:bg-orange-300'
+                  : 'bg-white text-black hover:bg-gray-100 border-2 border-gray-300 font-semibold'
                 }`}
               >
                 <div className="font-semibold">{day.getDate()}</div>

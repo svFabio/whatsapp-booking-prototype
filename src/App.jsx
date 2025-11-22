@@ -6,7 +6,7 @@ const WhatsAppBookingPrototype = () => {
   const [tabletView, setTabletView] = useState('calendar');
   const [phoneView, setPhoneView] = useState('calendar');
   const [messages, setMessages] = useState([
-    { id: 1, type: 'bot', text: '¡Hola! Bienvenido a nuestra clínica. ¿En qué puedo ayudarte?', time: '10:30' }
+    { id: 1, type: 'bot', text: '¡Hola! Bienvenido, ¿En qué puedo ayudarte?', time: '10:30' }
   ]);
   const [showPaymentButton, setShowPaymentButton] = useState(false);
   const [paymentTimeout, setPaymentTimeout] = useState(null);
@@ -514,7 +514,7 @@ const WhatsAppBookingPrototype = () => {
               <h3 className="text-lg font-bold text-gray-800">Tablet de Recepcion</h3>
               <p className="text-sm text-gray-600 mt-2">Esta es la tablet que usa la recepcionista en la clinica para validar pagos y gestionar citas</p>
             </div>
-            <div className="w-[800px] bg-gray-800 rounded-2xl p-4 shadow-2xl">
+            <div className="w-full max-w-2xl bg-gray-800 rounded-2xl p-4 shadow-2xl">
               <div className="bg-white rounded-xl overflow-hidden">
                 {tabletView === 'calendar' && <CalendarView color="blue" view={tabletView} setView={setTabletView} />}
                 {tabletView === 'day' && <DayView color="blue" setView={setTabletView} />}

@@ -8,14 +8,12 @@ const WhatsAppBookingPrototype = () => {
   const [messages, setMessages] = useState([
     { id: 1, type: 'bot', text: '¡Hola! Bienvenido a nuestra clínica. ¿En qué puedo ayudarte?', time: '10:30' }
   ]);
+  const [showPaymentButton, setShowPaymentButton] = useState(false);
+  const [paymentTimeout, setPaymentTimeout] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 22));
   const [selectedDate, setSelectedDate] = useState(new Date(2025, 10, 25));
   const [bookings, setBookings] = useState([
-    { id: 1, date: '2025-11-25', time: '10:00', client: 'María López', status: 'confirmed', phone: '+591 7123-4567', paid: true, service: 'Limpieza dental' },
-    { id: 2, date: '2025-11-25', time: '14:00', client: 'Juan Pérez', status: 'pending', phone: '+591 7234-5678', paid: false, service: 'Consulta general' },
-    { id: 3, date: '2025-11-26', time: '09:00', client: 'Ana Martínez', status: 'confirmed', phone: '+591 7345-6789', paid: true, service: 'Ortodoncia' },
-    { id: 4, date: '2025-11-27', time: '11:00', client: 'Carlos Rojas', status: 'confirmed', phone: '+591 7456-7890', paid: true, service: 'Endodoncia' },
-    { id: 5, date: '2025-11-28', time: '15:00', client: 'Lucía Fernández', status: 'pending', phone: '+591 7567-8901', paid: false, service: 'Blanqueamiento' }
+    { id: 1, date: '2025-11-25', time: '15:00', client: 'Cliente Demo', status: 'pending', phone: '+591 71234567', paid: false, service: 'Consulta general' }
   ]);
 
   const timeSlots = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
@@ -58,21 +56,32 @@ const WhatsAppBookingPrototype = () => {
   };
 
   const simulateConversation = () => {
+    // Clear any existing timeout
+    if (paymentTimeout) {
+      clearTimeout(paymentTimeout);
+    }
+
     const conversation = [
       { type: 'user', text: 'Hola, quiero agendar una cita', time: '10:31' },
       { type: 'bot', text: '¡Perfecto! Te mostraré los horarios disponibles. ¿Para qué fecha te gustaría agendar?', time: '10:31' },
       { type: 'user', text: '25 de noviembre', time: '10:32' },
       { type: 'bot', text: 'Horarios disponibles para el 25 de noviembre:\n\n09:00 AM\n11:00 AM\n15:00 PM\n16:00 PM\n17:00 PM\n\n¿Cuál prefieres?', time: '10:32' },
       { type: 'user', text: '15:00', time: '10:33' },
-      { type: 'bot', text: '¡Excelente!\n\nTu cita:\nFecha: 25 de noviembre\nHora: 15:00\nServicio: Consulta general\nCosto: Bs. 200\n\nPara confirmar tu reserva, necesitamos un adelanto del 50% (Bs. 100).\n\nPor favor realiza el pago con el siguiente QR:', time: '10:33', showQR: true },
-      { type: 'user', text: '[Imagen del comprobante]', time: '10:34', isImage: true },
-      { type: 'bot', text: 'Gracias! Hemos recibido tu comprobante de pago.\n\nEstamos validando tu pago. Te confirmaremos tu cita en breve.', time: '10:34' }
+      { type: 'bot', text: '¡Excelente!\n\nTu cita:\nFecha: 25 de noviembre\nHora: 15:00\nServicio: Consulta general\nCosto: Bs. 200\n\nPara confirmar tu reserva, necesitamos un adelanto del 50% (Bs. 100).\n\nPor favor realiza el pago con el siguiente QR:', time: '10:33', showQR: true }
     ];
 
     let index = 0;
     const interval = setInterval(() => {
       if (index < conversation.length) {
         setMessages(prev => [...prev, { ...conversation[index], id: prev.length + 1 }]);
+        if (index === conversation.length - 1) {
+          setShowPaymentButton(true);
+          // Start 10-minute timeout simulation (1 minute for demo)
+          const timeout = setTimeout(() => {
+            handlePaymentTimeout();
+          }, 60000); // 1 minute for demo, would be 10 minutes in real app
+          setPaymentTimeout(timeout);
+        }
         index++;
       } else {
         clearInterval(interval);
@@ -80,12 +89,51 @@ const WhatsAppBookingPrototype = () => {
     }, 1500);
   };
 
+  const handlePaymentTimeout = () => {
+    setShowPaymentButton(false);
+    setBookings([]); // Release the booking
+    setMessages(prev => [...prev, {
+      id: prev.length + 1,
+      type: 'bot',
+      text: '⏰ El tiempo para realizar el pago ha expirado.\n\nEl horario ha sido liberado. Por favor, vuelve a agendar tu cita desde el principio.',
+      time: '10:43'
+    }]);
+  };
+
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
+
+  const simulatePayment = () => {
+    // Clear the timeout since payment was made
+    if (paymentTimeout) {
+      clearTimeout(paymentTimeout);
+      setPaymentTimeout(null);
+    }
+
+    setShowPaymentButton(false);
+    setPaymentCompleted(true);
+    setMessages(prev => [...prev, {
+      id: prev.length + 1,
+      type: 'user',
+      text: '[Imagen del comprobante]',
+      time: '10:34',
+      isImage: true
+    }]);
+    setTimeout(() => {
+      setMessages(prev => [...prev, {
+        id: prev.length + 1,
+        type: 'bot',
+        text: 'Gracias! Hemos recibido tu comprobante de pago.\n\nAhora la recepcionista debe validar el pago desde la tablet.\n\nTe notificaremos cuando tu cita esté confirmada.',
+        time: '10:34'
+      }]);
+    }, 1000);
+  };
+
   const changeMonth = (delta) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + delta, 1));
   };
 
   const CalendarView = ({ color = 'blue', view, setView }) => (
-    <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-2xl font-bold text-gray-800">Calendario de Citas</h3>
         <div className="flex items-center gap-2">
@@ -122,11 +170,11 @@ const WhatsAppBookingPrototype = () => {
                 onClick={() => { setSelectedDate(day); setView('day'); }}
                 disabled={isPast}
                 className={`aspect-square rounded-lg p-1 text-sm transition relative ${
-                  isPast ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  isPast ? 'bg-gray-200 text-gray-600 cursor-not-allowed'
                   : isSelected ? `bg-${color}-500 text-white ring-2 ring-${color}-600`
                   : isToday(day) ? 'bg-green-100 text-green-800 font-bold'
                   : hasBookings ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
-                  : 'bg-gray-50 hover:bg-gray-100'
+                  : 'bg-gray-50 text-gray-900 hover:bg-gray-100'
                 }`}
               >
                 <div className="font-semibold">{day.getDate()}</div>
@@ -282,6 +330,15 @@ const WhatsAppBookingPrototype = () => {
                       b.id === booking.id ? { ...b, paid: true, status: 'confirmed' } : b
                     );
                     setBookings(updated);
+                    // Simular envío de mensaje de confirmación por WhatsApp
+                    setTimeout(() => {
+                      setMessages(prev => [...prev, {
+                        id: prev.length + 1,
+                        type: 'bot',
+                        text: '¡Pago validado exitosamente!\n\nTu cita para el 25 de noviembre a las 15:00 está ahora CONFIRMADA.\n¡Gracias por tu reserva!',
+                        time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                      }]);
+                    }, 1000);
                   }}
                   className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-bold text-sm transition"
                 >
@@ -327,91 +384,106 @@ const WhatsAppBookingPrototype = () => {
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Sistema de Reservas Automático WhatsApp</h1>
-          <p className="text-gray-600">Prototipo funcional - Sincronización en tiempo real entre dispositivos</p>
+          <p className="text-gray-600 mb-4">Prototipo funcional - Sincronización en tiempo real entre dispositivos</p>
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+            <h3 className="font-bold text-blue-800 mb-2">Como usar este prototipo:</h3>
+            <ol className="list-decimal list-inside text-sm text-blue-700 space-y-1">
+              <li>Haz clic en "WhatsApp Bot" para ver la simulacion del cliente</li>
+              <li>Presiona "Iniciar Simulacion de Conversacion" para ver el flujo completo</li>
+              <li>Cuando aparezca el QR, tienes 1 minuto para pagar (simula 10 minutos en la vida real)</li>
+              <li>Haz clic en "Simular Pago del Cliente" para enviar el comprobante a tiempo</li>
+              <li>Veras los mensajes de confirmacion del pago en el chat</li>
+              <li>Si no pagas en 1 minuto, veras el mensaje de "tiempo expirado" y el horario se libera</li>
+              <li>Luego haz clic en "Simular Validacion desde Recepcion" para cambiar a la tablet</li>
+              <li>En la tablet, valida el pago pendiente haciendo clic en "Validar Pago"</li>
+              <li>Ve a "Telefono Principal" para ver la sincronizacion en tiempo real</li>
+            </ol>
+          </div>
         </div>
 
         {activeView === 'whatsapp' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="bg-green-600 text-white p-4 flex items-center gap-3">
-                <MessageCircle size={24} />
-                <div>
-                  <h3 className="font-bold">Clínica Dental Sonrisas</h3>
-                  <p className="text-sm text-green-100">Bot automático en línea</p>
+          <div className="flex flex-col items-center">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-bold text-gray-800">WhatsApp en Telefono del Cliente</h3>
+              <p className="text-sm text-gray-600 mt-2">Esta es la interfaz que ve el cliente en su telefono cuando reserva por WhatsApp</p>
+              <p className="text-xs text-orange-600 mt-1 font-medium">OJO: Los mensajes que responderá el bot serán personalizados, esto es solo una demostración base</p>
+            </div>
+            <div className="w-80 bg-gray-800 rounded-3xl p-3 shadow-2xl mb-6">
+              <div className="bg-black rounded-2xl overflow-hidden">
+                <div className="bg-green-600 text-white p-4 flex items-center gap-3">
+                  <MessageCircle size={24} />
+                  <div>
+                    <h3 className="font-bold">Clínica Dental Sonrisas</h3>
+                    <p className="text-sm text-green-100">Bot automático en línea</p>
+                  </div>
+                </div>
+
+                <div className="h-96 overflow-y-auto p-4 bg-gray-50">
+                  {messages.map((msg) => (
+                    <div key={msg.id} className={`mb-3 flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-xs rounded-lg p-3 ${msg.type === 'user' ? 'bg-green-500 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none shadow'}`}>
+                        <p className="whitespace-pre-line text-sm">{msg.text}</p>
+
+                        {msg.showQR && (
+                          <div className="mt-3 bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="w-40 h-40 bg-gray-800 mx-auto flex items-center justify-center mb-2">
+                              <span className="text-white text-xs font-bold">QR CODE</span>
+                            </div>
+                            <p className="text-xs text-center text-gray-600 mb-1">Banco: BCP</p>
+                            <p className="text-xs text-center text-gray-600">Cuenta: 123-456789</p>
+                            <p className="text-xs text-center font-bold text-gray-800 mt-2">Monto: Bs. 100</p>
+                          </div>
+                        )}
+
+                        {msg.isImage && (
+                          <div className="mt-2 w-full h-32 bg-gray-200 rounded flex items-center justify-center">
+                            <span className="text-gray-600 text-xs">Comprobante.jpg</span>
+                          </div>
+                        )}
+
+                        <p className={`text-xs mt-1 ${msg.type === 'user' ? 'text-green-100' : 'text-gray-500'}`}>{msg.time}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-4 bg-white border-t">
+                  {/* Espacio vacío para mantener el diseño */}
                 </div>
               </div>
+            </div>
 
-              <div className="h-96 overflow-y-auto p-4 bg-gray-50">
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`mb-3 flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs rounded-lg p-3 ${msg.type === 'user' ? 'bg-green-500 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none shadow'}`}>
-                      <p className="whitespace-pre-line text-sm">{msg.text}</p>
-
-                      {msg.showQR && (
-                        <div className="mt-3 bg-white rounded-lg p-3 border border-gray-200">
-                          <div className="w-40 h-40 bg-gray-800 mx-auto flex items-center justify-center mb-2">
-                            <span className="text-white text-xs font-bold">QR CODE</span>
-                          </div>
-                          <p className="text-xs text-center text-gray-600 mb-1">Banco: BCP</p>
-                          <p className="text-xs text-center text-gray-600">Cuenta: 123-456789</p>
-                          <p className="text-xs text-center font-bold text-gray-800 mt-2">Monto: Bs. 100</p>
-                        </div>
-                      )}
-
-                      {msg.isImage && (
-                        <div className="mt-2 w-full h-32 bg-gray-200 rounded flex items-center justify-center">
-                          <span className="text-gray-600 text-xs">Comprobante.jpg</span>
-                        </div>
-                      )}
-
-                      <p className={`text-xs mt-1 ${msg.type === 'user' ? 'text-green-100' : 'text-gray-500'}`}>{msg.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-4 bg-white border-t">
-                {messages.length === 1 ? (
-                  <button onClick={simulateConversation} className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg transition">
-                    Iniciar Simulación de Conversación
-                  </button>
-                ) : messages.length >= 8 ? (
-                  <button
-                    onClick={() => {
-                      const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
-                      setBookings([...bookings, {
-                        id: bookings.length + 1,
-                        date: dateStr,
-                        time: '15:00',
-                        client: 'Cliente Nuevo',
-                        status: 'pending',
-                        phone: '+591 7890-1234',
-                        paid: false,
-                        service: 'Consulta general'
-                      }]);
-                      setMessages(prev => [...prev, {
-                        id: prev.length + 1,
-                        type: 'bot',
-                        text: 'Pago validado y confirmado!\n\nTu cita está reservada para el 25 de noviembre a las 15:00.\n\nTe enviaremos un recordatorio 24 horas antes. ¡Gracias!',
-                        time: '10:36'
-                      }]);
-                      setActiveView('tablet');
-                    }}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition"
-                  >
-                    Simular validación desde recepción
-                  </button>
-                ) : (
-                  <div className="text-center text-gray-500 text-sm">Conversación automática en progreso...</div>
-                )}
-              </div>
+            <div className="text-center mb-4">
+              <p className="text-sm text-gray-600">Controles de simulacion - estos botones no aparecen en la app real, solo sirven para demostrar el flujo</p>
+            </div>
+            <div className="flex gap-4 justify-center flex-wrap">
+              {messages.length === 1 ? (
+                <button onClick={simulateConversation} className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition">
+                  Iniciar Simulacion de Conversacion
+                </button>
+              ) : showPaymentButton ? (
+                <button onClick={simulatePayment} className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg transition">
+                  Simular Pago del Cliente
+                </button>
+              ) : paymentCompleted ? (
+                <button
+                  onClick={() => {
+                    setActiveView('tablet');
+                  }}
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition"
+                >
+                  Simular Validacion desde Recepcion
+                </button>
+              ) : (
+                <div className="text-center text-gray-500 text-sm py-3">Conversacion automatica en progreso...</div>
+              )}
             </div>
           </div>
         )}
 
         {activeView === 'phone' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="col-span-1 lg:col-span-2 bg-purple-50 border-l-4 border-purple-500 p-4 rounded-lg">
+          <div className="flex flex-col items-center">
+            <div className="w-full max-w-4xl mb-6 bg-purple-50 border-l-4 border-purple-500 p-4 rounded-lg">
               <div className="flex items-center gap-2">
                 <Smartphone className="text-purple-600" size={24} />
                 <div>
@@ -420,17 +492,35 @@ const WhatsAppBookingPrototype = () => {
                 </div>
               </div>
             </div>
-            {phoneView === 'calendar' && <CalendarView color="purple" view={phoneView} setView={setPhoneView} />}
-            {phoneView === 'day' && <DayView color="purple" setView={setPhoneView} />}
-            {phoneView === 'payments' && <PaymentsView color="purple" setView={setPhoneView} />}
+            <div className="flex flex-col items-center">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-gray-800">Telefono del Propietario</h3>
+                <p className="text-sm text-gray-600 mt-2">2do dispositivo de personal para gestionar citas y validar pagos</p>
+              </div>
+              <div className="w-96 bg-gray-800 rounded-3xl p-3 shadow-2xl">
+                <div className="bg-white rounded-2xl overflow-hidden">
+                  {phoneView === 'calendar' && <CalendarView color="purple" view={phoneView} setView={setPhoneView} />}
+                  {phoneView === 'day' && <DayView color="purple" setView={setPhoneView} />}
+                  {phoneView === 'payments' && <PaymentsView color="purple" setView={setPhoneView} />}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
         {activeView === 'tablet' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {tabletView === 'calendar' && <CalendarView color="blue" view={tabletView} setView={setTabletView} />}
-            {tabletView === 'day' && <DayView color="blue" setView={setTabletView} />}
-            {tabletView === 'payments' && <PaymentsView color="blue" setView={setTabletView} />}
+          <div className="flex flex-col items-center">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-bold text-gray-800">Tablet de Recepcion</h3>
+              <p className="text-sm text-gray-600 mt-2">Esta es la tablet que usa la recepcionista en la clinica para validar pagos y gestionar citas</p>
+            </div>
+            <div className="w-[800px] bg-gray-800 rounded-2xl p-4 shadow-2xl">
+              <div className="bg-white rounded-xl overflow-hidden">
+                {tabletView === 'calendar' && <CalendarView color="blue" view={tabletView} setView={setTabletView} />}
+                {tabletView === 'day' && <DayView color="blue" setView={setTabletView} />}
+                {tabletView === 'payments' && <PaymentsView color="blue" setView={setTabletView} />}
+              </div>
+            </div>
           </div>
         )}
 
@@ -509,7 +599,7 @@ const WhatsAppBookingPrototype = () => {
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-2xl font-bold mb-4">Sincronización entre Dispositivos</h3>
               <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-500 rounded-lg p-4 mb-4">
-                <p className="text-gray-800 font-semibold mb-2">🔄 Sincronización en Tiempo Real</p>
+                <p className="text-gray-800 font-semibold mb-2"> Sincronización en Tiempo Real</p>
                 <p className="text-sm text-gray-700">
                   El <span className="font-bold text-purple-600">Teléfono Principal</span> y la <span className="font-bold text-blue-600">Tablet de Recepción</span> están 
                   completamente sincronizados. Cualquier cambio que realices en uno se refleja instantáneamente en el otro.
